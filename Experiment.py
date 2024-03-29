@@ -1,3 +1,4 @@
+import os
 from operator import itemgetter
 
 import torch
@@ -11,8 +12,9 @@ from trainer import trainer, hooks, configuration
 from trainer.utils import setup_system, patch_configs
 from trainer.metrics import AccuracyEstimator
 from trainer.tensorboard_visualizer import TensorBoardVisualizer
-from torchvision import transforms
+from torchvision.transforms import v2 as transforms
 from lenet import LeNet5
+from resnet_model import pretrained_resnet18
 
 import matplotlib.pyplot as plt
 
@@ -42,7 +44,11 @@ class Experiment:
         self.visualizer = TensorBoardVisualizer()
         setup_system(system_config)
 
-    def run(self, trainer_config: configuration.TrainerConfig) -> dict:
+    def run(self, trainer_config: configuration.TrainerConfig, check_point_name) -> dict:
+
+        if check_point_name is not None:
+            check_point_path = os.path.join(trainer_config.model_dir, check_point_name)
+            self.model.load_state_dict(torch.load(check_point_path))
 
         device = torch.device(trainer_config.device)
         self.model = self.model.to(device)
@@ -86,24 +92,37 @@ class Experiment:
             axi.imshow(image)
             axi.axis('off')
 
+        # labels = {}
+        # for index in range(dataset_lengh):
+        #     image, label = dataset[index]
+        #     if label.item() not in labels.keys():
+        #         labels[label.item()] = 1
+        #     else:
+        #         labels[label.item()] += 1
+
         fig.show()
         plt.pause(0)
-
 
 # %%
 def main():
     '''Run the experiment
     '''
     # patch configs depending on cuda availability
-    dataloader_config, trainer_config = patch_configs(epoch_num_to_set=100, batch_size_to_set=32)
-    dataset_config = configuration.DatasetConfig(root_dir="data", image_size=32)
+    mean = [0.485, 0.456, 0.406] 
+    std = [0.229, 0.224, 0.225]
+    dataloader_config, trainer_config = patch_configs(epoch_num_to_set=1000, batch_size_to_set=32)
+    dataset_config = configuration.DatasetConfig(root_dir="data", image_size=32)#224)
     dataset_config.train_transforms = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
+        transforms.GaussianBlur(kernel_size=3),
         transforms.ToTensor(),
-        transforms.Normalize((0.1307, ), (0.3081, ))
+        transforms.Normalize(mean, std)
     ])
     dataset_config.test_transforms = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.1307, ), (0.3081, ))
+        transforms.Normalize(mean, std)
+
     ])
     experiment = Experiment(dataset_config=dataset_config, dataloader_config=dataloader_config)
     results = experiment.run(trainer_config)

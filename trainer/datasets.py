@@ -75,6 +75,7 @@ class KenyanFood13Dataset(Dataset):
             sys.exit(-1)
         
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # img = self.image_to_square(img)
         img = cv2.resize(img, (self.image_size, self.image_size) , interpolation= cv2.INTER_LINEAR)
         
         # F.resize(img, self.image_size)
@@ -90,6 +91,21 @@ class KenyanFood13Dataset(Dataset):
 
     def __len__(self):
         return self.num_samples
+    
+    def image_to_square(self, image):
+        desired_size = max(image.shape[:2])
+        old_size = image.shape[:2] # old_size is in (height, width) format
+
+        delta_w = desired_size - old_size[1]
+        delta_h = desired_size - old_size[0]
+        top, bottom = delta_h//2, delta_h-(delta_h//2)
+        left, right = delta_w//2, delta_w-(delta_w//2)
+
+        color = [0, 0, 0]
+        new_im = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT,
+            value=color)
+
+        return new_im
 
 def get_data(dataset_config, dataloader_config):
     root_dir = dataset_config.root_dir
@@ -101,7 +117,6 @@ def get_data(dataset_config, dataloader_config):
     val_dataset = KenyanFood13Dataset(root_dir, test_transforms, image_size)
     
     train_indices, val_indices = train_test_split(list(range(len(train_dataset))), test_size=0.2, random_state=42)
-
     train_dataset = Subset(train_dataset, train_indices)
     val_dataset = Subset(val_dataset, val_indices)
 

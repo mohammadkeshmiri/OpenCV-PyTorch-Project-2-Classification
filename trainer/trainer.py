@@ -56,6 +56,7 @@ class Trainer:
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
     def fit(self, epochs: int):
+        previos_best =''
         iterator = tqdm(range(epochs), dynamic_ncols=True)
         for epoch in iterator:
             output_train = self.hooks["train"](
@@ -100,21 +101,28 @@ class Trainer:
             if self.hooks["end_epoch"] is not None:
                 self.hooks["end_epoch"](iterator, epoch, output_train, output_test)
 
+            checkpoint = {
+                'epoch': epoch + 1,
+                'state_dict': self.model.state_dict(),
+                'optimizer': self.optimizer.state_dict()
+                }
             if self.model_save_best:
                 best_acc = max([self.get_key_metric(item) for item in self.metrics['test_metric']])
                 current_acc = self.get_key_metric(output_test['metric'])
 
                 if current_acc >= best_acc:
                     os.makedirs(self.save_dir, exist_ok=True)
-                    torch.save(
-                        self.model.state_dict(),
-                        os.path.join(self.save_dir, self.model.__class__.__name__) + '_best.pth'
-                    )
+                    file_path = os.path.join(self.save_dir, self.model.__class__.__name__) + '_best_' + str(datetime.datetime.now()) + '.pth'
+                    torch.save(checkpoint, file_path)
+
+                    if os.path.exists(previos_best):
+                        os.remove(previos_best)
+                    previos_best = file_path
             else:
                 if (epoch + 1) % self.model_saving_frequency == 0:
                     os.makedirs(self.save_dir, exist_ok=True)
                     torch.save(
-                        self.model.state_dict(),
+                        checkpoint,
                         os.path.join(self.save_dir, self.model.__class__.__name__) + '_' +
                         str(datetime.datetime.now()) + '.pth'
                     )

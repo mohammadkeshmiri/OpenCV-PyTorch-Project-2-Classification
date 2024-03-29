@@ -1,4 +1,6 @@
 from operator import itemgetter
+import os
+import datetime
 
 import torch
 
@@ -13,7 +15,7 @@ def train_hook_default(
     optimizer,
     device,
     data_getter=itemgetter("image"),
-    target_getter=itemgetter("mask"),
+    target_getter=itemgetter("target"),
     iterator_type=tqdm,
     prefix="",
     stage_progress=False
@@ -44,7 +46,7 @@ def test_hook_default(
     metric_fn,
     device,
     data_getter=itemgetter("image"),
-    target_getter=itemgetter("mask"),
+    target_getter=itemgetter("target"),
     iterator_type=tqdm,
     prefix="",
     stage_progress=False,
