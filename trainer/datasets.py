@@ -75,7 +75,7 @@ class KenyanFood13Dataset(Dataset):
             sys.exit(-1)
         
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        # img = self.image_to_square(img)
+        img = self.image_to_square(img)
         img = cv2.resize(img, (self.image_size, self.image_size) , interpolation= cv2.INTER_LINEAR)
         
         # F.resize(img, self.image_size)
@@ -116,7 +116,7 @@ def get_data(dataset_config, dataloader_config):
     train_dataset = KenyanFood13Dataset(root_dir, train_transform, image_size)
     val_dataset = KenyanFood13Dataset(root_dir, test_transforms, image_size)
     
-    train_indices, val_indices = train_test_split(list(range(len(train_dataset))), test_size=0.2, random_state=42)
+    train_indices, val_indices = train_test_split(list(range(len(train_dataset))), test_size=0.2, random_state=42) # use 21 for altarnative test set
     train_dataset = Subset(train_dataset, train_indices)
     val_dataset = Subset(val_dataset, val_indices)
 

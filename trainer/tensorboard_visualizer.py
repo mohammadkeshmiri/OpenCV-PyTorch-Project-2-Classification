@@ -4,8 +4,9 @@ from .visualizer import Visualizer
 
 
 class TensorBoardVisualizer(Visualizer):
-    def __init__(self):
+    def __init__(self, model_name):
         self._writer = SummaryWriter()
+        self._writer.add_text("model_name", model_name)
 
     def update_charts(self, train_metric, train_loss, test_metric, test_loss, learning_rate, epoch):
         if train_metric is not None:

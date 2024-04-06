@@ -14,8 +14,8 @@ class SystemConfig:
 class DatasetConfig:
     root_dir: str = "data"  # dataset directory root
     train_transforms: Iterable[Callable] = (ToTensor())  # data transformation to use during training data preparation
-    test_transforms: Iterable[Callable] = (ToTensor())  # data transformation to use during test data preparation
-    image_size: int = 32 #200  # image size to use during training
+    val_transforms: Iterable[Callable] = (ToTensor())  # data transformation to use during test data preparation
+    image_size: int = 232 #32 # image size to use during training
 
 @dataclass
 class DataloaderConfig:
@@ -24,13 +24,13 @@ class DataloaderConfig:
 
 @dataclass
 class OptimizerConfig:
-    learning_rate: float = 0.001  # determines the speed of network's weights update
+    learning_rate: float = 0.0001  # determines the speed of network's weights update
     momentum: float = 0.0  # used to improve vanilla SGD algorithm and provide better handling of local minimas
-    weight_decay: float = 0.0001  # amount of additional regularization on the weights values
+    weight_decay: float = 0.0000001  # amount of additional regularization on the weights values
     lr_step_milestones: Iterable = (
-        80, 150
+        150, 300, 450
     )  # at which epoches should we make a "step" in learning rate (i.e. decrease it in some manner)
-    lr_gamma: float = 0.1  # multiplier applied to current learning rate at each of lr_ctep_milestones
+    lr_gamma: float = 0.3  # multiplier applied to current learning rate at each of lr_ctep_milestones
 
 @dataclass
 class TrainerConfig:
