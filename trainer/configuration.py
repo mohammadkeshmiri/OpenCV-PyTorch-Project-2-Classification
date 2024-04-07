@@ -12,9 +12,11 @@ class SystemConfig:
 
 @dataclass
 class DatasetConfig:
+    mean = [0.485, 0.456, 0.406] 
+    std = [0.229, 0.224, 0.225]
     root_dir: str = "data"  # dataset directory root
     train_transforms: Iterable[Callable] = (ToTensor())  # data transformation to use during training data preparation
-    val_transforms: Iterable[Callable] = (ToTensor())  # data transformation to use during test data preparation
+    test_transforms: Iterable[Callable] = (ToTensor())  # data transformation to use during test data preparation
     image_size: int = 232 #32 # image size to use during training
 
 @dataclass

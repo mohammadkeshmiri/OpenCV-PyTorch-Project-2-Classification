@@ -16,7 +16,7 @@ from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 
 class KenyanFood13Dataset(Dataset):
-    def __init__(self, root_dir, transform, image_size):
+    def __init__(self, root_dir, transform, image_size, is_validation=False):
         '''
         Args:
           root_dir: (str) ditectory to images.
@@ -30,10 +30,12 @@ class KenyanFood13Dataset(Dataset):
         self.transform = transform
         self.image_size = image_size
         self.num_samples = 0
+        self.is_validation = is_validation
 
-        train_csv_path = os.path.join(root_dir, 'train.csv')
-        self.train_df = pd.read_csv(train_csv_path) #, delimiter='*,*', engine='python')
-        print(self.train_df.head())
+        csv_path = os.path.join(root_dir, 'train.csv')
+        if (is_validation):
+            csv_path = os.path.join(root_dir, 'test.csv')
+        self.train_df = pd.read_csv(csv_path) #, delimiter='*,*', engine='python')
 
         # initialize the train data dictionary
         self.data_dict = {
@@ -43,16 +45,16 @@ class KenyanFood13Dataset(Dataset):
 
         self.labels = []
 
-        image_dir = os.path.join(root_dir, 'images/images')
+        self.image_dir = os.path.join(root_dir, 'images/images')
 
         for index, row in self.train_df.iterrows():
-            image_path = os.path.join(image_dir, str(row['id']) + ".jpg")
-            self.data_dict['image_path'].append(image_path)
+            self.data_dict['image_path'].append(str(row['id']))
 
-            if row['class'] not in self.labels:
-                self.labels.append(row['class'])
-            
-            self.data_dict['class'].append(self.labels.index(row['class']))
+            if not is_validation:
+                if row['class'] not in self.labels:
+                    self.labels.append(row['class'])
+                
+                self.data_dict['class'].append(self.labels.index(row['class']))
 
             self.num_samples += 1
 
@@ -68,8 +70,9 @@ class KenyanFood13Dataset(Dataset):
           target: (tensor) target class.
         '''
         # Load image and boxes.
-        path = self.data_dict['image_path'][idx]
-        img = cv2.imread(path)
+        image_name = self.data_dict['image_path'][idx]
+        image_path = os.path.join(self.image_dir, image_name + ".jpg")
+        img = cv2.imread(image_path)
         if img is None or np.prod(img.shape) == 0:
             print('cannot load image from path: ', path)
             sys.exit(-1)
@@ -81,7 +84,11 @@ class KenyanFood13Dataset(Dataset):
         # F.resize(img, self.image_size)
 
         img = img[..., ::-1].copy()  # BGR to RGB
-        img_class = torch.tensor(self.data_dict['class'][idx])
+
+        if not self.is_validation:
+            img_class = torch.tensor(self.data_dict['class'][idx])
+        else:
+            img_class = image_name
 
         if self.transform:
             # img = ToTensor()(img)
@@ -114,15 +121,25 @@ def get_data(dataset_config, dataloader_config):
     image_size = dataset_config.image_size
     batch_size = dataloader_config.batch_size
     train_dataset = KenyanFood13Dataset(root_dir, train_transform, image_size)
-    val_dataset = KenyanFood13Dataset(root_dir, test_transforms, image_size)
+    test_dataset = KenyanFood13Dataset(root_dir, test_transforms, image_size)
+    
     
     train_indices, val_indices = train_test_split(list(range(len(train_dataset))), test_size=0.2, random_state=42) # use 21 for altarnative test set
     train_dataset = Subset(train_dataset, train_indices)
-    val_dataset = Subset(val_dataset, val_indices)
+    test_dataset = Subset(test_dataset, val_indices)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    return train_loader, test_loader, train_dataset.dataset.labels
+
+def get_val_data(dataset_config, dataloader_config):
+    root_dir = dataset_config.root_dir
+    test_transforms= dataset_config.test_transforms
+    image_size = dataset_config.image_size
+    batch_size = dataloader_config.batch_size
+    val_dataset = KenyanFood13Dataset(root_dir, test_transforms, image_size, is_validation=True)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
-    return train_loader, val_loader
+    return val_loader
 
 def draw_image(image, class_name):
     fig1 = plt.figure("Figure 2")
