@@ -122,8 +122,7 @@ def get_data(dataset_config, dataloader_config):
     batch_size = dataloader_config.batch_size
     train_dataset = KenyanFood13Dataset(root_dir, train_transform, image_size)
     test_dataset = KenyanFood13Dataset(root_dir, test_transforms, image_size)
-    
-    
+      
     train_indices, val_indices = train_test_split(list(range(len(train_dataset))), test_size=0.2, random_state=42) # use 21 for altarnative test set
     train_dataset = Subset(train_dataset, train_indices)
     test_dataset = Subset(test_dataset, val_indices)

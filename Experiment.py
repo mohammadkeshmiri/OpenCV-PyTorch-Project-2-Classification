@@ -14,7 +14,7 @@ from trainer.utils import setup_system, patch_configs
 from trainer.metrics import AccuracyEstimator
 from trainer.tensorboard_visualizer import TensorBoardVisualizer
 from torchvision.transforms import v2 as transforms
-from resnet_model import pretrained_resnet50
+from resnet_model import pretrained_resnet152 as pretrained_resnet
 
 import matplotlib.pyplot as plt
 
@@ -26,14 +26,14 @@ class Experiment:
         dataloader_config: configuration.DataloaderConfig = configuration.DataloaderConfig(),
         optimizer_config: configuration.OptimizerConfig = configuration.OptimizerConfig()
     ):
-        resnet50 = pretrained_resnet50(fix_feature_extractor=False, num_class=13)
-        dataset_config.train_transforms = resnet50.get_train_transforms()
-        dataset_config.test_transforms = resnet50.get_test_transforms()
+        model_class = pretrained_resnet(fix_feature_extractor=False, num_class=13)
+        dataset_config.train_transforms = model_class.get_train_transforms()
+        dataset_config.test_transforms = model_class.get_test_transforms()
         self.loader_train, self.loader_test, self.labels = get_data(dataset_config, dataloader_config)
         self.dataset_config = dataset_config
         self.dataloader_config = dataloader_config
         
-        self.model = resnet50.get_model()
+        self.model = model_class.get_model()
         self.loss_fn = nn.CrossEntropyLoss()
         self.metric_fn = AccuracyEstimator(topk=(1, ))
         self.optimizer = optim.SGD(
@@ -46,7 +46,7 @@ class Experiment:
         self.lr_scheduler = MultiStepLR(
             self.optimizer, milestones=optimizer_config.lr_step_milestones, gamma=optimizer_config.lr_gamma
         )
-        self.visualizer = TensorBoardVisualizer(resnet50.name)
+        self.visualizer = TensorBoardVisualizer(model_class.name)
         setup_system(system_config)
 
     def run(self, trainer_config: configuration.TrainerConfig, check_point_name = None) -> dict:
@@ -108,7 +108,7 @@ class Experiment:
         fig.show()
         plt.pause(0)
 
-    def validate(self, trainer_config: configuration.TrainerConfig, check_point_name = "ResNet50_best_20240403_1155pm.pth"):
+    def validate(self, trainer_config: configuration.TrainerConfig, check_point_name = "ResNet151_best_20240405_800am.pth"):
 
         check_point_path = os.path.join(trainer_config.model_dir, check_point_name)
         self.model.load_state_dict(torch.load(check_point_path)['state_dict'])
